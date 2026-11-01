@@ -61,6 +61,22 @@ X-API-Key: YOUR_MERCHANT_API_KEY
 
 Only trust the authenticated server-side status response. Do not fulfil orders from the browser return URL or a customer screenshot. A browser redirect is not proof of payment.
 
+## Android payment-alert monitor (manual review only)
+
+The companion Android app can send a filtered incoming-payment alert to CyberGetaway. Configure the app endpoint as:
+
+`https://YOUR-CYBERGETAWAY-HOST/api/webhook/payment-alerts`
+
+The app signs each request with HMAC-SHA256 using the same `WEBHOOK_SECRET` configured on the CyberGetaway server. Signature input:
+
+`deviceId|fingerprint|amount|X-Cyber-Timestamp`
+
+Headers: `X-Device-Id`, `X-Cyber-Timestamp` (13-digit Unix milliseconds), and `X-Cyber-Signature` (64-character lowercase hex HMAC). Requests older than five minutes are rejected.
+
+Only incoming `RECEIVED` alerts are accepted. Send only amount, currency, transaction type, transaction reference, transaction timestamp, device ID and a SHA-256 fingerprint. Do not send complete SMS text, OTPs, sender phone numbers, account details or message snippets. The server stores the minimum transaction metadata in `payment_alerts` and displays it under Payments → SMS Payment Monitor.
+
+A unique amount match is only a suggested order match. Alerts remain `REVIEW_REQUIRED`; this endpoint never marks an order PAID. The merchant must independently verify the actual credit in their bank/UPI app and use the normal dashboard “Mark paid” action. Raw SMS upload at `POST /api/webhook/sms` is disabled.
+
 ## Setup
 
 1. Use Node.js 18 or newer.
@@ -75,7 +91,7 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 | --- | --- |
 | `ADMIN_PASSWORD` | Private dashboard password |
 | `SESSION_SECRET` | Admin session signing secret |
-| `WEBHOOK_SECRET` | SMS webhook secret (optional SMS review flow) |
+| `WEBHOOK_SECRET` | HMAC secret shared with the merchant-owned Android alert app |
 | `MERCHANT_API_KEY` | Secret server-to-server key for website integration |
 | `VPA` | Merchant UPI ID |
 | `MERCHANT_NAME` | Merchant display name |
@@ -89,10 +105,13 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 - `POST /api/gateway/payment-intents` — create checkout (API key required).
 - `GET /api/gateway/checkout/:token` — public checkout details by unguessable token.
 - `GET /api/gateway/payment-intents/:orderId` — authenticated status lookup.
-- `POST /api/orders/create` — admin-authenticated one-off checkout link with a dynamic amount.\n- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.\n- `GET /api/admin/config` — non-secret merchant configuration for the signed-in dashboard.
+- `POST /api/orders/create` — admin-authenticated one-off checkout link with a dynamic amount.
+- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.
+- `GET /api/admin/config` — non-secret merchant configuration for the signed-in dashboard.
 - `PATCH /api/orders/:orderId/mark-paid` — manual merchant verification.
-- `POST /api/webhook/sms` — optional SMS review candidate; SMS never confirms payment.
-
+- `POST /api/webhook/payment-alerts` — signed, filtered incoming-payment alert; never confirms payment.
+- `POST /api/webhook/ping` — signed app connectivity test.
+- `GET /api/webhook/payment-alerts` — admin-authenticated SMS Payment Monitor list.
 ## Important
 
 UPI QR and intent links only request a payment. They do not verify receipt. The merchant must confirm the transaction in their bank/UPI app before marking it PAID. Do not collect UPI PINs, OTPs, card numbers, CVVs, or banking passwords on this website. For debit/credit cards or automatic bank verification, use an appropriately authorised payment/acquiring provider and comply with applicable rules. SQLite needs persistent storage and backups to survive host replacement. Render's ordinary filesystem is ephemeral; configure a persistent disk and set `DB_PATH` to a path on that disk, or migrate to a managed database, before relying on long-term order storage. The dashboard is mobile-responsive and uses a fixed bottom navigation on phones.

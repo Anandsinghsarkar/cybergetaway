@@ -27,3 +27,22 @@ for (const [name, type] of [
 }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_token ON orders(checkout_token) WHERE checkout_token IS NOT NULL');
 module.exports = db;
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS payment_alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fingerprint TEXT NOT NULL UNIQUE,
+  device_id TEXT NOT NULL,
+  amount REAL NOT NULL CHECK(amount > 0),
+  currency TEXT NOT NULL DEFAULT 'INR',
+  transaction_type TEXT NOT NULL CHECK(transaction_type = 'RECEIVED'),
+  reference_number TEXT NOT NULL,
+  transaction_at INTEGER NOT NULL,
+  matched_order_id TEXT,
+  review_status TEXT NOT NULL DEFAULT 'REVIEW_REQUIRED',
+  received_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_payment_alerts_received_at ON payment_alerts(received_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_alerts_reference_unique ON payment_alerts(reference_number);
+CREATE INDEX IF NOT EXISTS idx_payment_alerts_reference ON payment_alerts(reference_number);
+`);
