@@ -65,7 +65,7 @@ app.get('/api/admin/session', adminAuth, (req, res) => res.json({ authenticated:
 app.get('/api/admin/config', adminAuth, (req, res) => res.json({ merchantName: process.env.MERCHANT_NAME || 'Merchant', vpa: process.env.VPA || '', publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || (req.protocol + '://' + req.get('host')) }));
 
 app.use('/api/orders', require('./routes/orders')({ adminAuth }));
-app.use('/api/webhook', require('./routes/webhook'));
+app.use('/api/webhook', require('./routes/webhook')({ adminAuth }));
 app.use('/api/gateway', require('./routes/gateway'));
 
 app.get('/admin', (req, res) => res.redirect(302, '/dashboard.html'));
