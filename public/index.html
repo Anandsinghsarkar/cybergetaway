@@ -4,17 +4,16 @@
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1220;color:#eaf0ff;font:16px Arial;padding:20px}.card{width:min(100%,440px);background:#141f33;border:1px solid #263957;border-radius:22px;padding:28px;text-align:center;box-shadow:0 20px 60px #0006}.muted{color:#9eb0ca}.amount{font-size:38px;font-weight:800;margin:14px}.pill{display:inline-block;padding:7px 12px;border-radius:20px;background:#203d5a;color:#9fe2ff}button{border:0;border-radius:12px;padding:14px 20px;background:#20c997;color:#06271e;font-weight:800;font-size:16px;width:100%;cursor:pointer}#qrcode{background:white;padding:14px;width:max-content;margin:20px auto;border-radius:12px}#error{color:#ff9d9d}
 </style></head><body><main class="card"><span class="pill">Secure UPI payment</span><h1 id="merchant">MyShop</h1><div class="muted">Order ID</div><b id="orderId">Creating…</b><div class="amount" id="amount">₹500</div><p class="muted">Pay using any UPI app. Payment is confirmed only after merchant verification.</p><a id="payLink"><button id="payButton">Pay with UPI</button></a><div id="qrcode"></div><p id="message" class="muted">Preparing your order…</p><p id="error"></p></main>
 <script>
-const VPA='yourbusiness@bank'; // Set your own VPA here
-const MERCHANT_NAME='MyShop';
-const DEFAULT_AMOUNT=500;
-const amount=DEFAULT_AMOUNT;
-const orderId='ORD'+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase();
 const $=id=>document.getElementById(id);
-$('merchant').textContent=MERCHANT_NAME;$('amount').textContent='₹'+amount;$('orderId').textContent=orderId;
 (async()=>{try{
+ const configResponse=await fetch('/api/config');const config=await configResponse.json();
+ const VPA=config.vpa, MERCHANT_NAME=config.merchantName, amount=Number(config.defaultAmount);
+ if(!VPA || VPA==='yourbusiness@bank') throw new Error('Merchant UPI ID is not configured');
+ const orderId='ORD'+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase();
+ $('merchant').textContent=MERCHANT_NAME;$('amount').textContent='₹'+amount.toFixed(2);$('orderId').textContent=orderId;
  const r=await fetch('/api/orders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId,amount})});
  const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not create order');
- const link='upi://pay?'+new URLSearchParams({pa:VPA,pn:MERCHANT_NAME,am:String(amount),cu:'INR',tn:orderId});
+ const link='upi://pay?'+new URLSearchParams({pa:VPA,pn:MERCHANT_NAME,am:amount.toFixed(2),cu:'INR',tn:orderId});
  $('payLink').href=link;
  const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
  $('payButton').style.display=mobile?'block':'none';
