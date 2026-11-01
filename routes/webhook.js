@@ -22,7 +22,7 @@ module.exports = ({ adminAuth }) => {
     if (!Number.isSafeInteger(sentAt) || Math.abs(Date.now() - sentAt) > 5 * 60 * 1000) return false;
     const body = req.body || {};
     if (String(body.deviceId || '') !== deviceId) return false;
-    const canonical = deviceId + '|' + String(body.fingerprint || '') + '|' + String(body.amount || '') + '|' + timestamp;
+    const canonical = deviceId + '|' + String(body.fingerprint || '') + '|' + (Number(body.amount).toFixed(2)) + '|' + timestamp;
     const expected = crypto.createHmac('sha256', secret).update(canonical).digest('hex');
     return safeEqualHex(signature, expected);
   }
