@@ -5,7 +5,7 @@
   "description": "Single-merchant UPI payment collection and manual verification tracker",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" },
+  "engines": { "node": "22.x" },
   "dependencies": {
     "axios": "^1.7.9",
     "better-sqlite3": "^11.7.0",
