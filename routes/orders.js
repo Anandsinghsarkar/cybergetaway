@@ -1,58 +1,51 @@
 const express = require('express');
-const router = express.Router();
 const db = require('../database');
-
-// Create order
-router.post('/create', (req, res) => {
-  const { orderId, amount, customer } = req.body;
-  if (!orderId || !amount) {
-    return res.status(400).json({ error: 'orderId and amount required' });
-  }
-
-  try {
-    const stmt = db.prepare(
-      'INSERT INTO orders (order_id, customer, amount) VALUES (?, ?, ?)'
-    );
-    stmt.run(orderId, customer || 'Guest', amount);
-    res.json({ success: true, orderId, amount, status: 'PENDING' });
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      return res.status(400).json({ error: 'Order ID already exists' });
+module.exports = ({ adminAuth }) => {
+  const router = express.Router();
+  router.post('/create', (req, res) => {
+    const orderId = String(req.body?.orderId || '');
+    const amount = Number(req.body?.amount);
+    if (!/^ORD[A-Z0-9_-]{5,50}$/.test(orderId) || !Number.isFinite(amount) || amount <= 0 || amount > 10000000)
+      return res.status(400).json({ error: 'Valid orderId and positive amount required' });
+    try {
+      db.prepare('INSERT INTO orders (order_id, customer, amount) VALUES (?, ?, ?)').run(orderId, 'Guest', amount);
+      res.status(201).json({ success: true, orderId, amount, status: 'PENDING' });
+    } catch (e) {
+      if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Order ID already exists' });
+      throw e;
     }
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get all orders
-router.get('/', (req, res) => {
-  const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
-  res.json(orders);
-});
-
-// Get single order
-router.get('/:orderId', (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE order_id = ?').get(req.params.orderId);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  res.json(order);
-});
-
-// Stats
-router.get('/stats/summary', (req, res) => {
-  const totalPaid = db.prepare(
-    "SELECT COALESCE(SUM(amount), 0) as total FROM orders WHERE status = 'PAID'"
-  ).get();
-  const countPaid = db.prepare(
-    "SELECT COUNT(*) as count FROM orders WHERE status = 'PAID'"
-  ).get();
-  const countPending = db.prepare(
-    "SELECT COUNT(*) as count FROM orders WHERE status = 'PENDING'"
-  ).get();
-
-  res.json({
-    totalReceived: totalPaid.total,
-    paidOrders: countPaid.count,
-    pendingOrders: countPending.count
   });
-});
-
-module.exports = router;
+  router.get('/stats/summary', adminAuth, (req, res) => {
+    const paid = db.prepare("SELECT COALESCE(SUM(amount),0) total, COUNT(*) count FROM orders WHERE status='PAID'").get();
+    const pending = db.prepare("SELECT COUNT(*) count FROM orders WHERE status IN ('PENDING','UNVERIFIED')").get();
+    const failed = db.prepare("SELECT COUNT(*) count FROM orders WHERE status='FAILED'").get();
+    res.json({ totalReceived: paid.total, paidOrders: paid.count, pendingOrders: pending.count, failedOrders: failed.count });
+  });
+  router.get('/', adminAuth, (req, res) => res.json(db.prepare('SELECT order_id,customer,amount,upi_ref,status,created_at,paid_at,notes FROM orders ORDER BY id DESC LIMIT 1000').all()));
+  router.get('/:orderId', (req, res) => {
+    const order = db.prepare('SELECT order_id,amount,status,created_at,paid_at FROM orders WHERE order_id=?').get(req.params.orderId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
+  });
+  router.patch('/:orderId/mark-paid', adminAuth, (req, res) => {
+    const ref = String(req.body?.upiRef || '').trim();
+    if (ref.length > 80) return res.status(400).json({ error: 'Invalid UPI reference' });
+    const order = db.prepare("SELECT * FROM orders WHERE order_id=? AND status IN ('PENDING','UNVERIFIED')").get(req.params.orderId);
+    if (!order) return res.status(404).json({ error: 'Pending order not found' });
+    try {
+      db.prepare("UPDATE orders SET status='PAID', upi_ref=?, paid_at=CURRENT_TIMESTAMP WHERE order_id=?").run(ref || null, req.params.orderId);
+      res.json({ success: true, status: 'PAID' });
+    } catch (e) {
+      if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'This UPI reference is already recorded' });
+      throw e;
+    }
+  });
+  router.patch('/:orderId/status', adminAuth, (req, res) => {
+    const status = String(req.body?.status || '');
+    if (!['FAILED','REFUNDED','PENDING'].includes(status)) return res.status(400).json({ error: 'Unsupported status' });
+    const result = db.prepare("UPDATE orders SET status=?, notes=? WHERE order_id=? AND status!='PAID'").run(status, String(req.body?.notes || '').slice(0,500), req.params.orderId);
+    if (!result.changes) return res.status(404).json({ error: 'Order not found or already paid' });
+    res.json({ success: true, status });
+  });
+  return router;
+};
