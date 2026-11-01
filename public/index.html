@@ -1,23 +1,27 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay MyShop</title><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080f1d"><title>Cyber Payment | UPI Checkout</title>
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1220;color:#eaf0ff;font:16px Arial;padding:20px}.card{width:min(100%,440px);background:#141f33;border:1px solid #263957;border-radius:22px;padding:28px;text-align:center;box-shadow:0 20px 60px #0006}.muted{color:#9eb0ca}.amount{font-size:38px;font-weight:800;margin:14px}.pill{display:inline-block;padding:7px 12px;border-radius:20px;background:#203d5a;color:#9fe2ff}button{border:0;border-radius:12px;padding:14px 20px;background:#20c997;color:#06271e;font-weight:800;font-size:16px;width:100%;cursor:pointer}#qrcode{background:white;padding:14px;width:max-content;margin:20px auto;border-radius:12px}#error{color:#ff9d9d}
-</style></head><body><main class="card"><span class="pill">Secure UPI payment</span><h1 id="merchant">MyShop</h1><div class="muted">Order ID</div><b id="orderId">Creating…</b><div class="amount" id="amount">₹500</div><p class="muted">Pay using any UPI app. Payment is confirmed only after merchant verification.</p><a id="payLink"><button id="payButton">Pay with UPI</button></a><div id="qrcode"></div><p id="message" class="muted">Preparing your order…</p><p id="error"></p></main>
-<script>
-const $=id=>document.getElementById(id);
-(async()=>{try{
- const configResponse=await fetch('/api/config');const config=await configResponse.json();
- const VPA=config.vpa, MERCHANT_NAME=config.merchantName, amount=Number(config.defaultAmount);
- if(!VPA || VPA==='yourbusiness@bank') throw new Error('Merchant UPI ID is not configured');
- const orderId='ORD'+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase();
- $('merchant').textContent=MERCHANT_NAME;$('amount').textContent='₹'+amount.toFixed(2);$('orderId').textContent=orderId;
- const r=await fetch('/api/orders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId,amount})});
- const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not create order');
- const link='upi://pay?'+new URLSearchParams({pa:VPA,pn:MERCHANT_NAME,am:amount.toFixed(2),cu:'INR',tn:orderId});
- $('payLink').href=link;
- const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
- $('payButton').style.display=mobile?'block':'none';
- if(!mobile){$('payLink').style.display='none';new QRCode($('qrcode'),{text:link,width:210,height:210});}
- $('message').textContent='Order created. After paying, wait for merchant confirmation.';
-}catch(e){$('error').textContent=e.message;$('payButton').disabled=true;$('message').textContent='Order could not be created.';}})();
-</script></body></html>
+:root{color-scheme:dark;--bg:#080f1d;--panel:#111d30;--line:#263a58;--muted:#9aacc5;--cyan:#73d7ff;--green:#43dfad}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#173858 0,transparent 38%),var(--bg);color:#edf4ff;font:16px Inter,system-ui,Arial,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}.wrap{width:min(1080px,calc(100% - 36px));margin:auto}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12}.brand{font-weight:850;letter-spacing:.3px;font-size:19px}.brand span{color:var(--cyan)}nav{display:flex;gap:10px;align-items:center}.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 17px;border-radius:12px;border:1px solid var(--line);font-weight:750}.btn.primary{background:var(--green);color:#06251d;border-color:var(--green)}.hero{padding:86px 0 62px;max-width:760px}.eyebrow{display:inline-block;color:var(--cyan);background:#14334b;border:1px solid #285273;padding:8px 12px;border-radius:30px;font-size:13px;font-weight:750}.hero h1{font-size:clamp(40px,7vw,68px);line-height:1.04;letter-spacing:-2px;margin:22px 0}.hero h1 span{color:var(--cyan)}.hero p{color:var(--muted);font-size:18px;line-height:1.7;max-width:650px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:10px 0 58px}.card{background:linear-gradient(145deg,#14233a,#0e192a);border:1px solid var(--line);border-radius:18px;padding:22px}.icon{font-size:23px}.card h3{margin:14px 0 8px}.card p{color:var(--muted);line-height:1.6;margin:0;font-size:14px}.api{margin:0 0 58px}.api h2{font-size:28px}.code{background:#070d17;border:1px solid var(--line);border-radius:14px;padding:18px;overflow:auto;color:#bfeaff;font:13px/1.8 ui-monospace,monospace}.notice{border-left:3px solid #e7b65a;background:#241f16;color:#e9d6ad;padding:14px 16px;border-radius:8px;font-size:13px;line-height:1.6;margin-top:15px}footer{border-top:1px solid #ffffff12;padding:24px 0;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:700px){.hero{padding:62px 0 42px}.grid{grid-template-columns:1fr}.hero p{font-size:16px}header{height:68px}.brand{font-size:17px}.btn{padding:10px 12px;font-size:13px}}
+</style></head>
+<body><div class="wrap">
+<header><a class="brand" href="/">CYBER<span>PAYMENT</span></a><nav><a class="btn" href="/dashboard.html">Admin</a><a class="btn primary" href="#integration">API Docs</a></nav></header>
+<main>
+<section class="hero"><span class="eyebrow">● SINGLE-MERCHANT UPI CHECKOUT</span><h1>Simple UPI collection.<br><span>Clear payment tracking.</span></h1><p>Generate hosted UPI checkout pages for orders from your own website. Customers pay through their UPI app, while the merchant reviews the transaction and updates its status in the private dashboard.</p><div class="actions"><a class="btn primary" href="/dashboard.html">Open Admin Dashboard →</a><a class="btn" href="#integration">View API Integration</a></div></section>
+<section class="grid">
+<article class="card"><div class="icon">▦</div><h3>Hosted checkout</h3><p>Each API-created order gets a unique checkout link and a UPI QR code showing that order's amount.</p></article>
+<article class="card"><div class="icon">✓</div><h3>Manual verification</h3><p>Orders remain pending until the merchant checks the actual bank or UPI transaction and confirms it.</p></article>
+<article class="card"><div class="icon">⌁</div><h3>Order tracking</h3><p>Review pending and paid orders, recorded references, and payment totals from the admin dashboard.</p></article>
+</section>
+<section class="api" id="integration"><h2>Website integration</h2><p style="color:var(--muted);line-height:1.7">Your website backend creates a payment intent using the merchant API key. The API responds with a checkout URL that you can send to the customer.</p>
+<div class="code">POST /api/gateway/payment-intents<br>Content-Type: application/json<br>X-API-Key: YOUR_MERCHANT_API_KEY<br><br>{<br>&nbsp; "orderId": "ORDORDER12345",<br>&nbsp; "amount": 249.50,<br>&nbsp; "customerName": "Customer",<br>&nbsp; "returnUrl": "https://your-site.example/payment-return"<br>}</div>
+<div class="notice"><strong>Security & payment notice:</strong> Call this endpoint only from your website's backend. Never expose the API key in browser JavaScript. A redirect, screenshot, or customer message is not proof of payment. UPI transactions must be checked against the merchant's actual bank/UPI records before marking an order as paid. This is a merchant checkout and tracking tool, not a payment gateway or automatic bank-verification service.</div>
+</section></main>
+<footer><span>© <span id="year"></span> Cyber Payment</span><span>UPI collection · Manual merchant verification</span></footer></div>
+<script>document.getElementById('year').textContent=new Date().getFullYear();</script></body></html>
