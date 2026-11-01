@@ -22,7 +22,7 @@ router.post('/payment-intents', apiAuth, (req, res) => {
   const vpa = String(process.env.VPA || '').trim();
   const merchantName = String(process.env.MERCHANT_NAME || 'Merchant').trim().slice(0, 60);
   if (!/^ORD[A-Z0-9_-]{5,50}$/.test(orderId)) return res.status(400).json({ error: 'Invalid orderId' });
-  if (!Number.isFinite(amount) || amount < 1 || amount > 1000000 || Math.round(amount * 100) !== amount * 100) {
+  if (!Number.isFinite(amount) || amount < 1 || amount > 1000000 || Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7) {
     return res.status(400).json({ error: 'Amount must be between ₹1 and ₹10,00,000 with at most 2 decimals' });
   }
   if (!/^[\w.\-]{2,256}@[\w]{2,64}$/.test(vpa)) return res.status(503).json({ error: 'Merchant VPA is not configured' });
