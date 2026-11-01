@@ -16,5 +16,14 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 `);
 const columns = db.prepare('PRAGMA table_info(orders)').all().map(c => c.name);
-if (!columns.includes('notes')) db.exec('ALTER TABLE orders ADD COLUMN notes TEXT');
+for (const [name, type] of [
+  ['notes', 'TEXT'],
+  ['checkout_token', 'TEXT'],
+  ['merchant_vpa', 'TEXT'],
+  ['merchant_name', 'TEXT'],
+  ['return_url', 'TEXT']
+]) {
+  if (!columns.includes(name)) db.exec(`ALTER TABLE orders ADD COLUMN ${name} ${type}`);
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_token ON orders(checkout_token) WHERE checkout_token IS NOT NULL');
 module.exports = db;

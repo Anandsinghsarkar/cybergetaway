@@ -1,54 +1,97 @@
-# Private UPI Payment Tracker
+# CyberGetaway — UPI Checkout & Payment Tracker
 
-A single-merchant website for creating UPI payment requests and tracking your own business orders. It is not a payment gateway and does not connect to Razorpay or any other payment provider. UPI payments are verified manually by the merchant before an order is marked PAID.
+CyberGetaway provides a hosted UPI checkout page and a private merchant dashboard for a single merchant. It can be integrated into other websites using a server-to-server API. It is **not a regulated payment gateway** and does not provide bank-confirmed automatic payment callbacks, card acquiring, settlement, or escrow. UPI payments must be checked in the merchant's bank/UPI app and manually marked PAID in the dashboard.
 
-## File structure
+## Checkout experience
 
-- `server.js` — Express app, admin session, health endpoint and optional self-ping.
-- `database.js` — SQLite database and order schema.
-- `routes/orders.js` — Order creation, private listing, stats and status updates.
-- `routes/webhook.js` — Secret-protected SMS parser that creates unverified review candidates.
-- `public/index.html` — Customer UPI payment page and QR.
-- `public/dashboard.html` — Private admin dashboard.
-- `.env.example` — Environment variable template.
+- QR code for scanning from another phone.
+- UPI intent button and app choices labelled Google Pay, PhonePe, Paytm and other UPI apps. Android decides which installed UPI app opens; availability depends on the device.
+- Order amount and merchant details.
+- Checkout status polling. It remains pending until the merchant verifies the actual bank transaction.
+- No debit/credit card processing. Card acceptance requires an authorised acquiring/payment provider and is outside this UPI-only project.
 
-## Run locally
+## Integrate another website
 
-1. Install Node.js 18 or newer.
-2. Copy `.env.example` to `.env` and set strong private values.
-3. Run `npm install`.
-4. Run `npm start`.
-5. Open `http://localhost:3000`; open `/dashboard.html` for admin sign-in.
+Keep `MERCHANT_API_KEY` on your website's **server only**. Never put it in frontend JavaScript, HTML, a mobile app, or a public repository.
 
-## API endpoints
+Create an intent from your website backend:
 
-- `POST /api/orders/create` — Create a pending order.
-- `GET /api/orders/:orderId` — Read the public status of one order.
-- `POST /api/admin/login` and `POST /api/admin/logout` — Admin session.
-- `GET /api/orders` — Admin-only order list.
-- `GET /api/orders/stats/summary` — Admin-only totals.
-- `PATCH /api/orders/:orderId/mark-paid` — Admin-only payment confirmation.
-- `PATCH /api/orders/:orderId/status` — Admin-only non-paid status update.
-- `POST /api/webhook/sms` — Secret-protected SMS review candidate.
-- `GET /health` — Health check.
+```http
+POST https://YOUR-CYBERGETAWAY-HOST/api/gateway/payment-intents
+Content-Type: application/json
+X-API-Key: YOUR_MERCHANT_API_KEY
+
+{
+  "orderId": "ORDSHOP12345",
+  "amount": 249.00,
+  "customerName": "Customer",
+  "returnUrl": "https://your-store.example/payment-result"
+}
+```
+
+Example Node.js backend:
+
+```js
+const response = await fetch(process.env.CYBERGETAWAY_URL + '/api/gateway/payment-intents', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': process.env.CYBERGETAWAY_API_KEY
+  },
+  body: JSON.stringify({
+    orderId: 'ORDSHOP12345',
+    amount: 249,
+    customerName: 'Customer',
+    returnUrl: 'https://your-store.example/payment-result'
+  })
+});
+const payment = await response.json();
+if (!response.ok) throw new Error(payment.error || 'Payment intent failed');
+// Redirect the customer's browser to payment.checkoutUrl.
+```
+
+The API returns `checkoutUrl`. Redirect the customer's browser there. The checkout page is hosted by CyberGetaway, so the merchant API key is never exposed to the customer.
+
+After checkout, your backend can securely query the status:
+
+```http
+GET /api/gateway/payment-intents/ORDSHOP12345
+X-API-Key: YOUR_MERCHANT_API_KEY
+```
+
+Only trust the authenticated server-side status response. Do not fulfil orders from the browser return URL or a customer screenshot. A browser redirect is not proof of payment.
+
+## Setup
+
+1. Use Node.js 18 or newer.
+2. Copy `.env.example` to `.env` and set strong, unique secrets.
+3. Set `VPA` to your own UPI ID, `MERCHANT_NAME`, `PUBLIC_BASE_URL`, and `MERCHANT_API_KEY`.
+4. Run `npm install` and `npm start`.
+5. Customer checkout: `/checkout.html?token=...`; admin dashboard: `/dashboard.html`.
 
 ## Environment variables
 
 | Variable | Purpose |
 | --- | --- |
-| PORT | HTTP port (default 3000) |
-| SELF_URL | Optional URL used by the 10-minute health ping |
-| ADMIN_PASSWORD | Private admin login password |
-| SESSION_SECRET | Secret used to sign admin session cookies |
-| WEBHOOK_SECRET | Secret header required by the SMS endpoint |
-| CORS_ORIGIN | Comma-separated allowed browser origins |
-| VPA | Merchant UPI ID (set in the customer page constant) |
-| MERCHANT_NAME | Merchant display name |
-| DEFAULT_AMOUNT | Default amount shown on the customer page |
-| DB_PATH | Optional SQLite file path |
+| `ADMIN_PASSWORD` | Private dashboard password |
+| `SESSION_SECRET` | Admin session signing secret |
+| `WEBHOOK_SECRET` | SMS webhook secret (optional SMS review flow) |
+| `MERCHANT_API_KEY` | Secret server-to-server key for website integration |
+| `VPA` | Merchant UPI ID |
+| `MERCHANT_NAME` | Merchant display name |
+| `PUBLIC_BASE_URL` | Public CyberGetaway base URL used in checkout links |
+| `DB_PATH` | Optional path for persistent SQLite database |
+| `CORS_ORIGIN` | Allowed browser origins; API key must still remain server-side |
 
-## SMS forwarding concept
+## Main endpoints
 
-A trusted SMS-forwarding application can send the received bank notification text to `POST /api/webhook/sms` with JSON `{"message":"..."}` and the `x-webhook-secret` header. The parser only marks a matching order `UNVERIFIED`; it never treats SMS text as proof of payment. Check the actual bank or UPI app transaction before using the dashboard's Verify & Mark Paid action.
+- `POST /api/gateway/payment-intents` — create checkout (API key required).
+- `GET /api/gateway/checkout/:token` — public checkout details by unguessable token.
+- `GET /api/gateway/payment-intents/:orderId` — authenticated status lookup.
+- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.
+- `PATCH /api/orders/:orderId/mark-paid` — manual merchant verification.
+- `POST /api/webhook/sms` — optional SMS review candidate; SMS never confirms payment.
 
-**Important:** UPI intent links and QR codes only request payment; they do not confirm that money arrived. SMS text can be delayed, duplicated, incomplete or spoofed. Keep admin and webhook secrets private. SQLite data is stored in the configured local file; use a persistent database volume and separate backups if you need data to survive host replacement.
+## Important
+
+UPI QR and intent links only request a payment. They do not verify receipt. The merchant must confirm the transaction in their bank/UPI app before marking it PAID. Do not collect UPI PINs, OTPs, card numbers, CVVs, or banking passwords on this website. For debit/credit cards or automatic bank verification, use an appropriately authorised payment/acquiring provider and comply with applicable rules. SQLite needs persistent storage and backups to survive host replacement.
