@@ -53,8 +53,8 @@ app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 10 }),
   const expected = String(process.env.ADMIN_PASSWORD);
   const a = Buffer.from(supplied), b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).json({ error: 'Incorrect password' });
-  const expires = String(Date.now() + 12 * 60 * 60 * 1000);
-  res.setHeader('Set-Cookie', 'admin_session=' + expires + '.' + sign(expires) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200' + (process.env.NODE_ENV === 'production' ? '; Secure' : ''));
+  const expires = String(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  res.setHeader('Set-Cookie', 'admin_session=' + expires + '.' + sign(expires) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000' + (process.env.NODE_ENV === 'production' ? '; Secure' : ''));
   res.json({ success: true });
 });
 app.post('/api/admin/logout', (req, res) => {
@@ -62,6 +62,8 @@ app.post('/api/admin/logout', (req, res) => {
   res.json({ success: true });
 });
 app.get('/api/admin/session', adminAuth, (req, res) => res.json({ authenticated: true }));
+app.get('/api/admin/config', adminAuth, (req, res) => res.json({ merchantName: process.env.MERCHANT_NAME || 'Merchant', vpa: process.env.VPA || '', publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || (req.protocol + '://' + req.get('host')) }));
+
 app.use('/api/orders', require('./routes/orders')({ adminAuth }));
 app.use('/api/webhook', require('./routes/webhook'));
 app.use('/api/gateway', require('./routes/gateway'));
