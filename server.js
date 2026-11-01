@@ -20,7 +20,7 @@ app.use((req, res, next) => {
   if (origin && (allowed.includes(origin) || (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost(:\d+)?$/.test(origin)))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-webhook-secret');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-webhook-secret, x-api-key');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
   }
   if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -64,8 +64,10 @@ app.post('/api/admin/logout', (req, res) => {
 app.get('/api/admin/session', adminAuth, (req, res) => res.json({ authenticated: true }));
 app.use('/api/orders', require('./routes/orders')({ adminAuth }));
 app.use('/api/webhook', require('./routes/webhook'));
+app.use('/api/gateway', require('./routes/gateway'));
 
-app.get('/api/config', (req, res) => res.json({ vpa: process.env.VPA || 'yourbusiness@bank', merchantName: process.env.MERCHANT_NAME || 'MyShop', defaultAmount: Number(process.env.DEFAULT_AMOUNT || 500) }));\napp.get('/health', (req, res) => res.json({ status: 'alive', timestamp: new Date().toISOString(), uptime: process.uptime() }));
+app.get('/api/config', (req, res) => res.json({ vpa: process.env.VPA || 'yourbusiness@bank', merchantName: process.env.MERCHANT_NAME || 'MyShop', defaultAmount: Number(process.env.DEFAULT_AMOUNT || 500) }));
+app.get('/health', (req, res) => res.json({ status: 'alive', timestamp: new Date().toISOString(), uptime: process.uptime() }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message);
