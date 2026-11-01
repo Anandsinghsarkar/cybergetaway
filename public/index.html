@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pay MyShop</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 40px; background: #f5f5f5; }
+    .card { background: white; max-width: 400px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    button, a.btn { background: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px; }
+    #qrcode { margin: 20px auto; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Pay ₹500</h2>
+    <p>Order: <b id="orderId">ORD123</b></p>
+
+    <a id="upiBtn" class="btn" href="#">Pay via UPI App</a>
+    <div id="qrcode"></div>
+    <p style="color:#888;font-size:12px;">Mobile pe button, desktop pe QR scan karein</p>
+  </div>
+
+  <script>
+    const VPA = "yourbusiness@hdfcbank"; // apna VPA daalein
+    const NAME = "MyShop";
+    const AMOUNT = "500";
+    const ORDER_ID = "ORD" + Date.now();
+
+    document.getElementById("orderId").innerText = ORDER_ID;
+
+    const upiLink = `upi://pay?pa=${VPA}&pn=${NAME}&am=${AMOUNT}&cu=INR&tn=${ORDER_ID}`;
+
+    // Create order on backend
+    fetch('/api/orders/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: ORDER_ID, amount: parseFloat(AMOUNT) })
+    });
+
+    // QR
+    new QRCode(document.getElementById("qrcode"), {
+      text: upiLink, width: 200, height: 200
+    });
+
+    // Mobile detect
+    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+    document.getElementById("upiBtn").href = upiLink;
+    document.getElementById("upiBtn").style.display = isMobile ? "inline-block" : "none";
+    document.getElementById("qrcode").style.display = isMobile ? "none" : "block";
+  </script>
+</body>
+</html>
