@@ -15,12 +15,12 @@ module.exports = ({ adminAuth }) => {
     if (!/^ORD[A-Z0-9_-]{5,50}$/.test(orderId)) return res.status(400).json({ error: 'Order ID must start with ORD and contain 8–53 valid characters' });
     if (!Number.isFinite(amount) || amount < 1 || amount > 1000000 || Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7)
       return res.status(400).json({ error: 'Amount must be ₹1–₹10,00,000 with up to 2 decimal places' });
-    if (!/^[\\w.\\-]{2,256}@[\\w]{2,64}$/.test(vpa)) return res.status(503).json({ error: 'Set a valid VPA in Render Environment first' });
+    if (!/^[\w.\-]{2,256}@[\w]{2,64}$/.test(vpa)) return res.status(503).json({ error: 'Set a valid VPA in Render Environment first' });
     const token = crypto.randomBytes(32).toString('hex');
     try {
       db.prepare(`INSERT INTO orders (order_id, customer, amount, checkout_token, merchant_vpa, merchant_name)
         VALUES (?, ?, ?, ?, ?, ?)`).run(orderId, customer, amount, token, vpa, merchantName);
-      const base = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || (req.protocol + '://' + req.get('host'))).replace(/\\/$/, '');
+      const base = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || (req.protocol + '://' + req.get('host'))).replace(/\/$/, '');
       res.status(201).json({ success: true, orderId, amount, status: 'PENDING', checkoutUrl: base + '/checkout.html?token=' + token });
     } catch (e) {
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Order ID already exists' });
