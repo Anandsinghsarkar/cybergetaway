@@ -5,7 +5,8 @@ module.exports = ({ adminAuth }) => {
   router.post('/create', (req, res) => {
     const orderId = String(req.body?.orderId || '');
     const amount = Number(req.body?.amount);
-    const configuredAmount = Number(process.env.DEFAULT_AMOUNT || 500);\n    if (!/^ORD[A-Z0-9_-]{5,50}$/.test(orderId) || !Number.isFinite(amount) || amount <= 0 || amount > 10000000 || amount !== configuredAmount)
+    const configuredAmount = Number(process.env.DEFAULT_AMOUNT || 500);
+    if (!/^ORD[A-Z0-9_-]{5,50}$/.test(orderId) || !Number.isFinite(amount) || amount <= 0 || amount > 10000000 || amount !== configuredAmount)
       return res.status(400).json({ error: 'Valid orderId and configured payment amount required' });
     try {
       db.prepare('INSERT INTO orders (order_id, customer, amount) VALUES (?, ?, ?)').run(orderId, 'Guest', amount);
