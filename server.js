@@ -65,7 +65,7 @@ app.get('/api/admin/session', adminAuth, (req, res) => res.json({ authenticated:
 app.use('/api/orders', require('./routes/orders')({ adminAuth }));
 app.use('/api/webhook', require('./routes/webhook'));
 
-app.get('/health', (req, res) => res.json({ status: 'alive', timestamp: new Date().toISOString(), uptime: process.uptime() }));
+app.get('/api/config', (req, res) => res.json({ vpa: process.env.VPA || 'yourbusiness@bank', merchantName: process.env.MERCHANT_NAME || 'MyShop', defaultAmount: Number(process.env.DEFAULT_AMOUNT || 500) }));\napp.get('/health', (req, res) => res.json({ status: 'alive', timestamp: new Date().toISOString(), uptime: process.uptime() }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message);
