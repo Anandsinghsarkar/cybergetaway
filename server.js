@@ -20,7 +20,7 @@ app.use((req, res, next) => {
   if (origin && (allowed.includes(origin) || (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost(:\d+)?$/.test(origin)))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-webhook-secret, x-api-key');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-webhook-secret, x-api-key, x-device-id, x-cyber-timestamp, x-cyber-signature');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
   }
   if (req.method === 'OPTIONS') return res.sendStatus(204);
