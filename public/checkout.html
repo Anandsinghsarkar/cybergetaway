@@ -1,16 +1,67 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Secure UPI Checkout</title><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>Secure UPI Checkout</title>
+<link rel="stylesheet" href="/theme.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1220;color:#edf3ff;font:16px Arial;padding:18px}.card{width:min(100%,470px);background:#142139;border:1px solid #2b4162;border-radius:22px;padding:26px;text-align:center;box-shadow:0 18px 60px #0006}.muted{color:#a8bad3}.amount{font-size:38px;font-weight:800;margin:14px}a{display:inline-block;border:0;border-radius:12px;padding:14px 16px;background:#20c997;color:#05251c;font-weight:800;text-decoration:none;cursor:pointer}.apps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.apps a{background:#243b5c;color:#edf3ff}.qr{background:white;padding:14px;width:max-content;margin:18px auto;border-radius:12px}#status{padding:10px;border-radius:10px;background:#20344f}.note{font-size:13px;line-height:1.5}
-</style></head><body><main class="card"><div class="muted">SECURE UPI CHECKOUT</div><h2 id="merchant">Loading…</h2><div class="muted">Order <b id="order">—</b></div><div class="amount" id="amount">₹—</div><div id="qr" class="qr"></div><a id="upi" href="#">Pay using UPI app</a><div class="apps"><a id="gpay" href="#">Google Pay</a><a id="phonepe" href="#">PhonePe</a><a id="paytm" href="#">Paytm</a><a id="other" href="#">Other UPI app</a></div><p id="status">Loading payment details…</p><p class="muted note">After paying, keep this page open. Payment is confirmed only after the merchant checks the bank transaction and marks it paid. Never share your UPI PIN or OTP.</p></main>
+body{display:grid;place-items:start center;padding:24px 14px 40px}
+.pay{width:min(100%,460px)}
+.bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.secure{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ok)}
+.secure svg{width:14px;height:14px}
+.sum{background:linear-gradient(135deg,#1e3a8a,#2547d0);color:#fff;border-radius:18px 18px 0 0;padding:24px 24px 22px}
+.sum .m{font-size:13px;opacity:.85;font-weight:600}.sum .amt{font-size:40px;font-weight:800;letter-spacing:-1px;margin:6px 0 2px}.sum .ord{font-size:12px;opacity:.8}
+.box{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 18px 18px;padding:22px 24px 24px;box-shadow:var(--sh)}
+.box h3{margin:0 0 12px;font-size:14px;letter-spacing:.2px}
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.apps .btn{padding:12px 8px}
+.wide{width:100%;padding:14px;font-size:15px}
+.qrwrap{display:grid;justify-items:center;gap:10px;margin:6px 0 4px}
+.qr{background:#fff;padding:18px;border:1px solid var(--line);border-radius:14px;line-height:0}
+.hint{font-size:12.5px;color:var(--muted);text-align:center;margin:0}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:20px 0 14px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.kv{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:#f8fafc;border-radius:10px;padding:10px 12px;margin-top:8px}
+.kv small{display:block;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.kv b{font-size:14px;overflow-wrap:anywhere}
+#status{margin:18px 0 0;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:600;background:#f1f5f9;color:var(--ink2)}
+#status.ok{background:var(--ok-l);color:var(--ok)}#status.bad{background:var(--bad-l);color:var(--bad)}
+.fine{font-size:12px;color:var(--muted);line-height:1.6;margin:16px 0 0}
+.link{background:none;border:0;color:var(--brand);font-weight:600;font-size:13px;padding:6px;margin:0 auto;display:block}
+</style></head><body>
+<main class="pay">
+<div class="bar"><a class="brand" href="/">Cyber<span>Payment</span></a><span class="secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Secure checkout</span></div>
+<section class="sum"><div class="m" id="merchant">Loading…</div><div class="amt" id="amount">₹—</div><div class="ord">Order <b id="order">—</b></div></section>
+<section class="box">
+<div id="mobilePay" class="hidden"><a id="upi" class="btn primary wide" href="#">Pay with UPI app</a><div class="apps"><a id="gpay" class="btn" href="#">Google Pay</a><a id="phonepe" class="btn" href="#">PhonePe</a><a id="paytm" class="btn" href="#">Paytm</a><a id="other" class="btn" href="#">Other app</a></div><button id="qrToggle" class="link" type="button">Show QR code to scan from another phone</button></div>
+<div id="qrBox" class="qrwrap"><h3 id="qrTitle">Scan to pay</h3><div id="qr" class="qr"></div><p class="hint">Open any UPI app and use its <b>camera scanner</b>. Uploading a QR screenshot from the gallery may be limited by your app.</p></div>
+<div class="or">or pay manually with UPI ID</div>
+<div class="kv"><div><small>UPI ID</small><b id="vpa">—</b></div><button class="btn small" id="copyVpa" type="button">Copy</button></div>
+<div class="kv"><div><small>Amount</small><b id="amt2">—</b></div><button class="btn small" id="copyAmt" type="button">Copy</button></div>
+<div class="kv"><div><small>Remark (enter exactly)</small><b id="rem">—</b></div><button class="btn small" id="copyRem" type="button">Copy</button></div>
+<p id="status">Loading payment details…</p>
+<p class="fine">Keep this page open after paying. Your payment is confirmed once the merchant verifies the bank transaction. Never share your UPI PIN or OTP with anyone.</p>
+</section></main>
 <script>
 const token=new URLSearchParams(location.search).get('token');const $=id=>document.getElementById(id);
-(async()=>{try{if(!token)throw Error('Missing checkout token');const url='/api/gateway/checkout/'+encodeURIComponent(token);const r=await fetch(url);const d=await r.json();if(!r.ok)throw Error(d.error||'Checkout unavailable');
-$('merchant').textContent=d.merchant_name;$('order').textContent=d.order_id;$('amount').textContent='₹'+Number(d.amount).toFixed(2);
-const params=new URLSearchParams({pa:d.merchant_vpa,pn:d.merchant_name,am:Number(d.amount).toFixed(2),cu:'INR',tn:d.order_id});const link='upi://pay?'+params.toString();
-['upi','gpay','phonepe','paytm','other'].forEach(id=>$(id).href=link);new QRCode($('qr'),{text:link,width:220,height:220});
-const statusUrl=url;let finished=false;
-const poll=async()=>{try{const x=await fetch(statusUrl);const now=await x.json();$('status').textContent=now.status==='PAID'?'Payment confirmed by merchant.':now.status==='FAILED'?'Payment marked failed.':now.status==='REFUNDED'?'Payment refunded.':'Waiting for merchant verification…';if(!finished&&['PAID','FAILED','REFUNDED'].includes(now.status)){finished=true;clearInterval(timer);if(d.return_url){const u=new URL(d.return_url);u.searchParams.set('orderId',d.order_id);u.searchParams.set('paymentStatus',now.status);location.href=u.toString()}}}catch{}};
-$('status').textContent='Payment pending. Complete payment in your UPI app.';const timer=setInterval(poll,5000);poll();
-}catch(e){$('status').textContent=e.message}})();
+const ua=navigator.userAgent,isAndroid=/Android/i.test(ua),isIOS=/iPhone|iPad|iPod/i.test(ua),isMobile=isAndroid||isIOS;
+const enc=s=>encodeURIComponent(s).replace(/%40/g,'@');
+const PKG={gpay:'com.google.android.apps.nbu.paisa.user',phonepe:'com.phonepe.app',paytm:'net.one97.paytm'};
+const IOS={gpay:'gpay://upi/pay?',phonepe:'phonepe://pay?',paytm:'paytmmp://pay?'};
+function appLink(app,q){if(app==='upi'||app==='other')return 'upi://pay?'+q;if(isAndroid)return 'intent://pay?'+q+'#Intent;scheme=upi;package='+PKG[app]+';end';if(isIOS)return IOS[app]+q;return 'upi://pay?'+q}
+function copy(text,btn){const done=()=>{const t=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=t,1400)};if(navigator.clipboard)navigator.clipboard.writeText(text).then(done,()=>{});else{const i=document.createElement('input');i.value=text;document.body.append(i);i.select();document.execCommand('copy');i.remove();done()}}
+function setStatus(text,cls){const s=$('status');s.textContent=text;s.className=cls||''}
+(async()=>{try{
+if(!token)throw Error('Missing checkout token');
+const url='/api/gateway/checkout/'+encodeURIComponent(token);const r=await fetch(url);const d=await r.json();if(!r.ok)throw Error(d.error||'Checkout unavailable');
+const amt=Number(d.amount).toFixed(2);
+$('merchant').textContent=d.merchant_name;$('order').textContent=d.order_id;$('amount').textContent='₹'+amt;$('amt2').textContent='₹'+amt;$('vpa').textContent=d.merchant_vpa;$('rem').textContent=d.order_id;
+$('copyVpa').onclick=e=>copy(d.merchant_vpa,e.target);$('copyAmt').onclick=e=>copy(amt,e.target);$('copyRem').onclick=e=>copy(d.order_id,e.target);
+const q='pa='+enc(d.merchant_vpa)+'&pn='+enc(d.merchant_name)+'&am='+amt+'&cu=INR&tn='+enc(d.order_id);
+['upi','gpay','phonepe','paytm','other'].forEach(id=>$(id).href=appLink(id,q));
+new QRCode($('qr'),{text:'upi://pay?'+q,width:230,height:230,correctLevel:QRCode.CorrectLevel.M});
+if(isMobile){$('mobilePay').classList.remove('hidden');$('qrBox').classList.add('hidden');$('qrToggle').onclick=()=>{const h=$('qrBox').classList.toggle('hidden');$('qrToggle').textContent=h?'Show QR code to scan from another phone':'Hide QR code'}}
+let finished=false;
+const poll=async()=>{try{const x=await fetch(url);const now=await x.json();
+if(now.status==='PAID')setStatus('Payment confirmed by merchant.','ok');else if(now.status==='FAILED')setStatus('Payment marked as failed.','bad');else if(now.status==='REFUNDED')setStatus('Payment refunded.','bad');else setStatus('Waiting for payment and merchant verification…');
+if(!finished&&['PAID','FAILED','REFUNDED'].includes(now.status)){finished=true;clearInterval(timer);if(d.return_url){const u=new URL(d.return_url);u.searchParams.set('orderId',d.order_id);u.searchParams.set('paymentStatus',now.status);location.href=u.toString()}}}catch{}};
+setStatus('Payment pending. Complete the payment in your UPI app.');const timer=setInterval(poll,5000);poll();
+}catch(e){setStatus(e.message,'bad')}})();
 </script></body></html>
