@@ -50,7 +50,7 @@ if (!response.ok) throw new Error(payment.error || 'Payment intent failed');
 // Redirect the customer's browser to payment.checkoutUrl.
 ```
 
-The API returns `checkoutUrl`. Redirect the customer's browser there. The checkout page is hosted by CyberGetaway, so the merchant API key is never exposed to the customer.
+The `amount` is dynamic per order: send `49`, `199`, `499`, or any valid INR amount (₹1–₹10,00,000, up to 2 decimal places). No default amount needs to be configured for integrated websites. The API returns `checkoutUrl`. Redirect the customer's browser there. The checkout page is hosted by CyberGetaway, so the merchant API key is never exposed to the customer.
 
 After checkout, your backend can securely query the status:
 
@@ -65,7 +65,7 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 
 1. Use Node.js 18 or newer.
 2. Copy `.env.example` to `.env` and set strong, unique secrets.
-3. Set `VPA` to your own UPI ID, `MERCHANT_NAME`, `PUBLIC_BASE_URL`, and `MERCHANT_API_KEY`.
+3. Set `VPA` to your own UPI ID, `MERCHANT_NAME`, `PUBLIC_BASE_URL`, and `MERCHANT_API_KEY`. `DEFAULT_AMOUNT` is optional and is used only by the standalone demo homepage; integrated websites send their own amount with each payment-intent request.
 4. Run `npm install` and `npm start`.
 5. Customer checkout: `/checkout.html?token=...`; admin dashboard: `/dashboard.html`.
 
@@ -79,6 +79,7 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 | `MERCHANT_API_KEY` | Secret server-to-server key for website integration |
 | `VPA` | Merchant UPI ID |
 | `MERCHANT_NAME` | Merchant display name |
+| `DEFAULT_AMOUNT` | Optional fixed amount for the standalone homepage only; not used by the integration API |
 | `PUBLIC_BASE_URL` | Public CyberGetaway base URL used in checkout links |
 | `DB_PATH` | Optional path for persistent SQLite database |
 | `CORS_ORIGIN` | Allowed browser origins; API key must still remain server-side |
