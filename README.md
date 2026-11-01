@@ -66,8 +66,8 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 1. Use Node.js 18 or newer.
 2. Copy `.env.example` to `.env` and set strong, unique secrets.
 3. Set `VPA` to your own UPI ID, `MERCHANT_NAME`, `PUBLIC_BASE_URL`, and `MERCHANT_API_KEY`. `DEFAULT_AMOUNT` is optional and is used only by the standalone demo homepage; integrated websites send their own amount with each payment-intent request.
-4. Run `npm install` and `npm start`.
-5. Customer checkout: `/checkout.html?token=...`; admin dashboard: `/dashboard.html`.
+4. On Render, use Node.js 22, Build Command `yarn install`, and Start Command `node server.js`. Locally, run `yarn install` and `yarn start`.
+5. Customer checkout: `/checkout.html?token=...`; public landing page: `/`; merchant dashboard: `/admin` or `/dashboard.html`.
 
 ## Environment variables
 
@@ -89,10 +89,10 @@ Only trust the authenticated server-side status response. Do not fulfil orders f
 - `POST /api/gateway/payment-intents` — create checkout (API key required).
 - `GET /api/gateway/checkout/:token` — public checkout details by unguessable token.
 - `GET /api/gateway/payment-intents/:orderId` — authenticated status lookup.
-- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.
+- `POST /api/orders/create` — admin-authenticated one-off checkout link with a dynamic amount.\n- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.\n- `GET /api/admin/config` — non-secret merchant configuration for the signed-in dashboard.
 - `PATCH /api/orders/:orderId/mark-paid` — manual merchant verification.
 - `POST /api/webhook/sms` — optional SMS review candidate; SMS never confirms payment.
 
 ## Important
 
-UPI QR and intent links only request a payment. They do not verify receipt. The merchant must confirm the transaction in their bank/UPI app before marking it PAID. Do not collect UPI PINs, OTPs, card numbers, CVVs, or banking passwords on this website. For debit/credit cards or automatic bank verification, use an appropriately authorised payment/acquiring provider and comply with applicable rules. SQLite needs persistent storage and backups to survive host replacement.
+UPI QR and intent links only request a payment. They do not verify receipt. The merchant must confirm the transaction in their bank/UPI app before marking it PAID. Do not collect UPI PINs, OTPs, card numbers, CVVs, or banking passwords on this website. For debit/credit cards or automatic bank verification, use an appropriately authorised payment/acquiring provider and comply with applicable rules. SQLite needs persistent storage and backups to survive host replacement. Render's ordinary filesystem is ephemeral; configure a persistent disk and set `DB_PATH` to a path on that disk, or migrate to a managed database, before relying on long-term order storage. The dashboard is mobile-responsive and uses a fixed bottom navigation on phones.
