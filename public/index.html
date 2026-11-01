@@ -1,52 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Pay MyShop</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial; text-align: center; padding: 40px; background: #f5f5f5; }
-    .card { background: white; max-width: 400px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    button, a.btn { background: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px; }
-    #qrcode { margin: 20px auto; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Pay ₹500</h2>
-    <p>Order: <b id="orderId">ORD123</b></p>
-
-    <a id="upiBtn" class="btn" href="#">Pay via UPI App</a>
-    <div id="qrcode"></div>
-    <p style="color:#888;font-size:12px;">Mobile pe button, desktop pe QR scan karein</p>
-  </div>
-
-  <script>
-    const VPA = "yourbusiness@hdfcbank"; // apna VPA daalein
-    const NAME = "MyShop";
-    const AMOUNT = "500";
-    const ORDER_ID = "ORD" + Date.now();
-
-    document.getElementById("orderId").innerText = ORDER_ID;
-
-    const upiLink = `upi://pay?pa=${VPA}&pn=${NAME}&am=${AMOUNT}&cu=INR&tn=${ORDER_ID}`;
-
-    // Create order on backend
-    fetch('/api/orders/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: ORDER_ID, amount: parseFloat(AMOUNT) })
-    });
-
-    // QR
-    new QRCode(document.getElementById("qrcode"), {
-      text: upiLink, width: 200, height: 200
-    });
-
-    // Mobile detect
-    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
-    document.getElementById("upiBtn").href = upiLink;
-    document.getElementById("upiBtn").style.display = isMobile ? "inline-block" : "none";
-    document.getElementById("qrcode").style.display = isMobile ? "none" : "block";
-  </script>
-</body>
-</html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay MyShop</title><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1220;color:#eaf0ff;font:16px Arial;padding:20px}.card{width:min(100%,440px);background:#141f33;border:1px solid #263957;border-radius:22px;padding:28px;text-align:center;box-shadow:0 20px 60px #0006}.muted{color:#9eb0ca}.amount{font-size:38px;font-weight:800;margin:14px}.pill{display:inline-block;padding:7px 12px;border-radius:20px;background:#203d5a;color:#9fe2ff}button{border:0;border-radius:12px;padding:14px 20px;background:#20c997;color:#06271e;font-weight:800;font-size:16px;width:100%;cursor:pointer}#qrcode{background:white;padding:14px;width:max-content;margin:20px auto;border-radius:12px}#error{color:#ff9d9d}
+</style></head><body><main class="card"><span class="pill">Secure UPI payment</span><h1 id="merchant">MyShop</h1><div class="muted">Order ID</div><b id="orderId">Creating…</b><div class="amount" id="amount">₹500</div><p class="muted">Pay using any UPI app. Payment is confirmed only after merchant verification.</p><a id="payLink"><button id="payButton">Pay with UPI</button></a><div id="qrcode"></div><p id="message" class="muted">Preparing your order…</p><p id="error"></p></main>
+<script>
+const VPA='yourbusiness@bank'; // Set your own VPA here
+const MERCHANT_NAME='MyShop';
+const DEFAULT_AMOUNT=500;
+const amount=DEFAULT_AMOUNT;
+const orderId='ORD'+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase();
+const $=id=>document.getElementById(id);
+$('merchant').textContent=MERCHANT_NAME;$('amount').textContent='₹'+amount;$('orderId').textContent=orderId;
+(async()=>{try{
+ const r=await fetch('/api/orders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId,amount})});
+ const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not create order');
+ const link='upi://pay?'+new URLSearchParams({pa:VPA,pn:MERCHANT_NAME,am:String(amount),cu:'INR',tn:orderId});
+ $('payLink').href=link;
+ const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+ $('payButton').style.display=mobile?'block':'none';
+ if(!mobile){$('payLink').style.display='none';new QRCode($('qrcode'),{text:link,width:210,height:210});}
+ $('message').textContent='Order created. After paying, wait for merchant confirmation.';
+}catch(e){$('error').textContent=e.message;$('payButton').disabled=true;$('message').textContent='Order could not be created.';}})();
+</script></body></html>
