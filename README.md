@@ -105,12 +105,13 @@ A unique amount match is only a suggested order match. Alerts remain `REVIEW_REQ
 - `POST /api/gateway/payment-intents` — create checkout (API key required).
 - `GET /api/gateway/checkout/:token` — public checkout details by unguessable token.
 - `GET /api/gateway/payment-intents/:orderId` — authenticated status lookup.
-- `POST /api/orders/create` — admin-authenticated one-off checkout link with a dynamic amount.\n- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.\n- `GET /api/admin/config` — non-secret merchant configuration for the signed-in dashboard.
+- `POST /api/orders/create` — admin-authenticated one-off checkout link with a dynamic amount.
+- `GET /api/orders` and `GET /api/orders/stats/summary` — admin dashboard data.
+- `GET /api/admin/config` — non-secret merchant configuration for the signed-in dashboard.
 - `PATCH /api/orders/:orderId/mark-paid` — manual merchant verification.
 - `POST /api/webhook/payment-alerts` — signed, filtered incoming-payment alert; never confirms payment.
 - `POST /api/webhook/ping` — signed app connectivity test.
 - `GET /api/webhook/payment-alerts` — admin-authenticated SMS Payment Monitor list.
-
 ## Important
 
 UPI QR and intent links only request a payment. They do not verify receipt. The merchant must confirm the transaction in their bank/UPI app before marking it PAID. Do not collect UPI PINs, OTPs, card numbers, CVVs, or banking passwords on this website. For debit/credit cards or automatic bank verification, use an appropriately authorised payment/acquiring provider and comply with applicable rules. SQLite needs persistent storage and backups to survive host replacement. Render's ordinary filesystem is ephemeral; configure a persistent disk and set `DB_PATH` to a path on that disk, or migrate to a managed database, before relying on long-term order storage. The dashboard is mobile-responsive and uses a fixed bottom navigation on phones.
