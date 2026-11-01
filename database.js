@@ -43,5 +43,6 @@ CREATE TABLE IF NOT EXISTS payment_alerts (
   received_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_payment_alerts_received_at ON payment_alerts(received_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_alerts_reference_unique ON payment_alerts(reference_number);
 CREATE INDEX IF NOT EXISTS idx_payment_alerts_reference ON payment_alerts(reference_number);
 `);
