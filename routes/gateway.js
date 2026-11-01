@@ -3,6 +3,9 @@ const crypto = require('crypto');
 const db = require('../database');
 const router = express.Router();
 
+// Merchant's own static QR image. Override with QR_IMAGE_URL; best is to host it yourself (e.g. /merchant-qr.jpg in public/).
+const DEFAULT_QR_IMAGE = 'https://i.postimg.cc/QM1TDYJ7/Screenshot-20261102-004136.jpg';
+
 function apiAuth(req, res, next) {
   const expected = String(process.env.MERCHANT_API_KEY || '');
   const supplied = String(req.headers['x-api-key'] || '');
@@ -45,7 +48,7 @@ router.post('/payment-intents', apiAuth, (req, res) => {
 router.get('/checkout/:token', (req, res) => {
   const order = db.prepare('SELECT order_id, customer, amount, status, merchant_vpa, merchant_name, return_url FROM orders WHERE checkout_token=?').get(req.params.token);
   if (!order) return res.status(404).json({ error: 'Checkout not found' });
-  res.json(order);
+  res.json({ ...order, qr_image: String(process.env.QR_IMAGE_URL || DEFAULT_QR_IMAGE) });
 });
 
 // Merchant server polls this endpoint; browser redirects are not proof of payment.
